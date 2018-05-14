@@ -1,25 +1,23 @@
 package com.spbpu.computation;
 
-import com.spbpu.computation.beans.ClosureFactory;
 import com.spbpu.computation.beans.IgniteFactory;
-import com.spbpu.computation.closure.ContinuationFibonacciClosure;
 import org.apache.ignite.Ignite;
-import org.apache.ignite.cluster.ClusterNode;
-import org.apache.ignite.lang.IgnitePredicate;
+import org.apache.ignite.cluster.ClusterGroup;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.ImportResource;
 
 import java.math.BigInteger;
-import java.util.UUID;
+import java.util.Arrays;
+import java.util.Collection;
 
 @SpringBootApplication
+@ImportResource("classpath:config.xml")
 public class ComputationApplication implements CommandLineRunner {
     @Autowired
     private IgniteFactory igniteFactory;
-    @Autowired
-    private ClosureFactory closureFactory;
 
     public static void main(String[] args) {
         SpringApplication.run(ComputationApplication.class, args);
@@ -28,19 +26,15 @@ public class ComputationApplication implements CommandLineRunner {
     @Override
     public void run(String... args) {
         try (Ignite ignite = igniteFactory.ignite()) {
-            long N = 8;
-            final UUID exampleNodeId = ignite.cluster()
-                    .localNode()
-                    .id();
-            IgnitePredicate<ClusterNode> nodeFilter = n -> ignite.cluster()
-                    .forRemotes()
-                    .nodes()
-                    .isEmpty() || !n.id().equals(exampleNodeId);
-            ContinuationFibonacciClosure closure = closureFactory
-                    .fibonacci(nodeFilter);
-            BigInteger result = ignite.compute(ignite.cluster().forPredicate(nodeFilter))
-                    .apply(closure, N);
-            System.out.println("The result is: " + result);
+            ClusterGroup clusterGroup = ignite.cluster().forRemotes();
+            Collection<Integer> result = ignite.compute(clusterGroup)
+                    .apply((String line) -> Arrays.stream(line.split(" "))
+                                    .mapToInt(String::length)
+                                    .sum(),
+                            Arrays.asList("Some text\nThat takes\nSeveral lines".split("\n")));
+            System.out.println("The result is: " + result.stream()
+                    .mapToInt(it -> it)
+                    .sum());
         }
     }
 }
