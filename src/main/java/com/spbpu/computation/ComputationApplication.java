@@ -28,9 +28,12 @@ public class ComputationApplication implements CommandLineRunner {
         try (Ignite ignite = igniteFactory.ignite()) {
             ClusterGroup clusterGroup = ignite.cluster().forRemotes();
             Collection<Integer> result = ignite.compute(clusterGroup)
-                    .apply((String line) -> Arrays.stream(line.split(" "))
-                                    .mapToInt(String::length)
-                                    .sum(),
+                    .apply((String line) -> {
+                                System.out.println("Computing for line:\n\t" + line);
+                                return Arrays.stream(line.split(" "))
+                                        .mapToInt(word -> 1)
+                                        .sum();
+                            },
                             Arrays.asList("Some text\nThat takes\nSeveral lines".split("\n")));
             System.out.println("The result is: " + result.stream()
                     .mapToInt(it -> it)
