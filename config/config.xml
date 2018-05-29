@@ -29,6 +29,7 @@
         http://www.springframework.org/schema/util
         http://www.springframework.org/schema/util/spring-util.xsd">
     <bean id="ignite.cfg" class="org.apache.ignite.configuration.IgniteConfiguration">
+        <property name="clientMode" value="true"/>
         <!-- Set to true to enable distributed class loading for examples, default is false. -->
         <property name="peerClassLoadingEnabled" value="true"/>
 
@@ -74,44 +75,54 @@
         </property>
     </bean>
 
-    <!-- Server node credentials. -->
-    <bean id="server.cred" class="org.apache.ignite.plugin.security.SecurityCredentials">
-        <constructor-arg value="server"/>
+    <bean id="defaultAllow.cred" class="org.apache.ignite.plugin.security.SecurityCredentials">
+        <constructor-arg value="node"/>
         <constructor-arg value="password"/>
     </bean>
 
-    <!-- Server node credentials. -->
-    <bean id="client.cred" class="org.apache.ignite.plugin.security.SecurityCredentials">
-        <constructor-arg value="server"/>
+    <!-- Cache  operations -->
+    <bean id="cache.readonly.cred" class="org.apache.ignite.plugin.security.SecurityCredentials">
+        <constructor-arg value="readonly"/>
         <constructor-arg value="password"/>
     </bean>
 
-    <bean class="org.gridgain.grid.configuration.GridGainConfiguration">
-        <property name="authenticator">
-            <bean class="org.gridgain.grid.security.passcode.PasscodeAuthenticator">
-                <property name="aclProvider">
-                    <bean class="org.gridgain.grid.security.passcode.AuthenticationAclBasicProvider">
-                        <constructor-arg>
-                            <map>
-                                <!-- Allow all operations on server nodes. -->
-                                <entry key-ref="server.cred" value="{defaultAllow:true}"/>
+    <!-- Cache  operations -->
+    <bean id="cache.readwrite.cred" class="org.apache.ignite.plugin.security.SecurityCredentials">
+        <constructor-arg value="readwrite"/>
+        <constructor-arg value="password"/>
+    </bean>
 
-                                <!-- Allow only cache reads on client nodes. -->
-                                <entry key-ref="client.cred"
-                                       value="
-                                    {
-                                        defaultAllow:false,
-                                        {
-                                            cache:'*',
-                                            permissions:[CACHE_READ]
-                                        }
-                                    }"
-                                />
-                            </map>
-                        </constructor-arg>
-                    </bean>
-                </property>
+    <bean id="authenticator.cfg.base" abstract="true" class="org.gridgain.grid.security.passcode.PasscodeAuthenticator">
+        <property name="aclProvider">
+            <bean class="org.gridgain.grid.security.passcode.AuthenticationAclBasicProvider">
+                <constructor-arg>
+                    <map>
+                        <entry key-ref="defaultAllow.cred" value="{defaultAllow:true}"/>
+
+                        <entry key-ref="cache.readonly.cred"
+                               value="{
+                                          defaultAllow:false,
+                                          {
+                                              cache:partitioned,
+                                              permissions:[CACHE_READ]
+                                          }
+                                      }"/>
+
+                        <entry key-ref="cache.readwrite.cred"
+                               value="{
+                                          defaultAllow:false,
+                                          {
+                                              cache:'*',
+                                              permissions:[CACHE_PUT, CACHE_READ, CACHE_REMOVE]
+                                          }
+                                      }"/>
+                    </map>
+                </constructor-arg>
             </bean>
         </property>
+    </bean>
+
+    <bean id="grid.cfg.base" abstract="true" class="org.apache.ignite.configuration.IgniteConfiguration">
+        <property name="localHost" value="127.0.0.1"/>
     </bean>
 </beans>
