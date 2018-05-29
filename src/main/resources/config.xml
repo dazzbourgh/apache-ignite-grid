@@ -74,4 +74,45 @@
             </bean>
         </property>
     </bean>
+
+    <!-- Server node credentials. -->
+    <bean id="server.cred" class="org.apache.ignite.plugin.security.SecurityCredentials">
+        <constructor-arg value="server"/>
+        <constructor-arg value="password"/>
+    </bean>
+
+    <!-- Server node credentials. -->
+    <bean id="client.cred" class="org.apache.ignite.plugin.security.SecurityCredentials">
+        <constructor-arg value="server"/>
+        <constructor-arg value="password"/>
+    </bean>
+
+    <bean class="org.gridgain.grid.configuration.GridGainConfiguration">
+        <property name="authenticator">
+            <bean class="org.gridgain.grid.security.passcode.PasscodeAuthenticator">
+                <property name="aclProvider">
+                    <bean class="org.gridgain.grid.security.passcode.AuthenticationAclBasicProvider">
+                        <constructor-arg>
+                            <map>
+                                <!-- Allow all operations on server nodes. -->
+                                <entry key-ref="server.cred" value="{defaultAllow:true}"/>
+
+                                <!-- Allow only cache reads on client nodes. -->
+                                <entry key-ref="client.cred"
+                                       value="
+                                    {
+                                        defaultAllow:false,
+                                        {
+                                            cache:'*',
+                                            permissions:[CACHE_READ]
+                                        }
+                                    }"
+                                />
+                            </map>
+                        </constructor-arg>
+                    </bean>
+                </property>
+            </bean>
+        </property>
+    </bean>
 </beans>
