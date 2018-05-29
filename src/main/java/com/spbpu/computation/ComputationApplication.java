@@ -26,7 +26,7 @@ public class ComputationApplication implements CommandLineRunner {
     @Override
     public void run(String... args) {
         try (Ignite ignite = igniteFactory.ignite()) {
-            ClusterGroup clusterGroup = ignite.cluster().forRemotes();
+            ClusterGroup clusterGroup = ignite.cluster().forServers();
             Collection<Integer> result = ignite.compute(clusterGroup)
                     .apply((String line) -> {
                                 System.out.println("Computing for line:\n\t" + line);
