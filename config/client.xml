@@ -22,7 +22,8 @@
 
     <bean parent="grid.cfg.base">
         <property name="clientMode" value="true"/>
-
+        <property name="gridName" value="client"/>
+        <property name="peerClassLoadingEnabled" value="true"/>
         <property name="pluginConfigurations">
             <list>
                 <bean class="org.gridgain.grid.configuration.GridGainConfiguration">
